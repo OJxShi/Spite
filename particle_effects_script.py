@@ -18,7 +18,6 @@ class ParticleEffect(AnimatedSprite):
         AnimatedSprite.update(self)
         self.lifespan -= 1
 
-
 def draw_particles():
     for particle in particle_list:
         particle.draw()
@@ -35,5 +34,28 @@ def update_particles():
         
     for particle_index in particles_to_kill:
         particle_list.pop(particle_index)
+
+class DamageNumber(ParticleEffect):
+    def __init__(self,x=500,y=500,dmg=0,type=0,crit=False):
+        super().__init__(x,y)
+        self.size = 20
+        self.font = pygame.font.SysFont("Arial",20,True,True)
+        self.dmg = dmg
+        self.text = self.font.render(str(dmg),True,(255,255,255))
+        self.lifespan = 15
+        self.rect = self.text.get_rect()
+    
+    def update(self):
+        super().update()
+        n = 15-self.lifespan
+        size = -n*(n-13)/42.25*self.size
+        self.font = pygame.font.SysFont("Arial",int(20+size),True,True)
+        colour = 255#-(n*1/5)**3
+        self.text = self.font.render(str(self.dmg),True,(colour,colour,colour))
+        self.rect.center = (self.x,self.y)
+    
+    def draw(self):
+        screen.blit(self.text,(self.rect.x-camera.x,self.rect.y-camera.y))
+        
 
 particle_list = []        
