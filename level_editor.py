@@ -1,4 +1,4 @@
-import pygame,collision_script,random,game_state
+import pygame,collision_script,random,game_state#,area_script
 from pygame import *
 from collision_script import *
 from game_state import GameState
@@ -30,8 +30,10 @@ cm = pygame.image.load("level editor assets/custom mouse.png")
 cm_point = pygame.image.load("level editor assets/custom mouse point.png")
 cm_grab = pygame.image.load("level editor assets/custom mouse grab.png")
 cm_grip = pygame.image.load("level editor assets/custom mouse grip.png")
+cm_draw = pygame.image.load("level editor assets/custom mouse draw.png")
 
 custom_mouse = cm
+
 
 class Default(GameState):
     def __init__(self):
@@ -46,11 +48,12 @@ class Default(GameState):
                 save_level()
                 
             if last_mouse_click <= DOUBLE_CLICK_COOLDOWN:
-                for i,c in enumerate(collision_list):
+                for i,c in enumerate(objects_list):
+                    objects_list[i].selected = False
+                for i,c in enumerate(objects_list):
                     if c.rect.collidepoint(mouse_world_pos):
-                        collision_list[i].selected = True
-                    else:
-                        collision_list[i].selected = False
+                        objects_list[i].selected = True
+                        break
         
         elif event.type == KEYDOWN:
             if (K_LCTRL in active_keys or 1073742051 in active_keys) and event.key == K_s:
@@ -59,16 +62,14 @@ class Default(GameState):
                 self.next_state = "Drag;Default"
 
     def update(self):
-        global collision_list
-        for i,c in enumerate(collision_list):
+        global objects_list
+        for i,c in enumerate(objects_list):
             if c.selected:
-                collision_list[i].colour = (245,200,40)
                 if K_g in active_keys and K_SPACE not in active_keys:
-                    collision_list[i].rect.x += mouse_movement[0]
-                    collision_list[i].rect.y += mouse_movement[1]
+                    objects_list[i].rect.x += mouse_movement[0]
+                    objects_list[i].rect.y += mouse_movement[1]
     
     def draw(self):
-#         global custom_mouse
         mouse_img = cm
         for button in self.buttons: 
             button.draw()
@@ -80,6 +81,7 @@ class Default(GameState):
             screen.blit(mouse_pos_text,(mouse_screen_pos[0],mouse_screen_pos[1]-20))
         
         custom_mouse(mouse_img)
+
 
 class Drag(GameState):
     def __init__(self,temp=False):
@@ -104,6 +106,7 @@ class Drag(GameState):
     
     def draw(self):
         mouse_img = cm
+        mouse_offset = (0,0)
         mouse_pos_text = mouse_pos_font.render(f"{mouse_world_pos}",True,(255,255,255),(0,0,0))
         for button in self.buttons: 
             button.draw()
@@ -113,17 +116,40 @@ class Drag(GameState):
         
         if mouse_screen_pos[1] >= 72:
             screen.blit(mouse_pos_text,(mouse_screen_pos[0],mouse_screen_pos[1]-20))
+            mouse_offset = (-12,3)
             if mouse_down:  
                 mouse_img = cm_grip
             else:
                 mouse_img = cm_grab
 
-        custom_mouse(mouse_img)
+        custom_mouse(mouse_img,mouse_offset)
+    def draw(self):
+        mouse_img = cm
+        offset = (0,0)
+        for button in self.buttons: 
+            button.draw()
+            if button.hover():
+                mouse_img = cm_point
+                button.draw_text()
+        mouse_pos_text = mouse_pos_font.render(f"{mouse_world_pos}",True,(255,255,255),(0,0,0))
+        if mouse_screen_pos[1] >= 72:
+            screen.blit(mouse_pos_text,(mouse_screen_pos[0],mouse_screen_pos[1]-20))
+            offset = (-15,0)
+            if mouse_down:
+                mouse_img = cm_grip
+            else:
+                mouse_img = cm_grab
         
+        custom_mouse(mouse_img,offset)
+        
+
+class NewRect(GameState):
+    def __init__(self):
+        super().__init__()
+
 
 def custom_mouse(img,offset=(0,0)):
     screen.blit(img,(mouse_screen_pos[0]+offset[0],mouse_screen_pos[1]+offset[1]))
-
 
 def switch_states():
     global current_state
@@ -135,6 +161,8 @@ def switch_states():
             current_state = Drag()
         elif current_state.next_state[:4] == "Drag":
             current_state = Drag(current_state.next_state.split(";")[1])
+        elif current_state.next_state == "New Rect":
+            current_state = NewRect()
         
         current_state.enter()
 
@@ -159,20 +187,6 @@ class Button:
         screen.blit(self.text,(mouse_screen_pos[0]+20,mouse_screen_pos[1]-20)) 
    
 SAVE_BUTTON = Button(200,10,30,30,text="Save Level")     
-        
-def load_area_from_file(file_name):
-    global collision_list,item_list
-    try:
-        file = open(f"custom levels/{file_name}.txt")
-    except FileNotFoundError:
-        file = open(f"custom levels/default.txt")
-    
-    for line in file:
-        id, data = line.split(":")
-        if id == "c":
-            c = [int(coord) for coord in data.split(",")]
-            collision_list.append(CollisionObject(c[0],c[1],c[2],c[3]))
-    file.close()
 
 current_state = Default()
 
@@ -222,7 +236,8 @@ def main():
         for y in range(-grid,HEIGHT+grid,grid):
             pygame.draw.line(screen,(75,75,75),(0,y-camera.y%grid),(WIDTH,y-camera.y%grid),1)
         
-        draw_colliders()
+        for o in objects_list:
+            o.draw()
         
 #         if K_SPACE in active_keys:
 #             mouse_pos_text = mouse_pos_font.render(f"{mouse_world_pos}",True,(255,255,255),(50,50,50))
@@ -237,13 +252,32 @@ def main():
         
         pygame.display.flip()
         clock.tick(30)
-    save_level()
+#     save_level()
     pygame.quit()
-
+    
+def load_area_from_file(file_name):
+    global objects_list,item_list
+    try:
+        file = open(f"custom levels/{file_name}.txt")
+    except FileNotFoundError:
+        file = open(f"custom levels/default.txt")
+    
+    for line in file:
+        id, data = line.split(":")
+        if id == "c":
+            c = [int(coord) for coord in data.split(",")]
+            objects_list.append(CollisionObject(c[0],c[1],c[2],c[3]))
+        elif id == "d":
+            c = [int(coord) for coord in data.split(",")]
+            objects_list.append(DamagingObject(c[0],c[1],c[2],c[3]))
+            
 def save_level(name="Untitled Level"):
     file = open(f"custom levels/{name}.txt","w")
-    for c in collision_list:
-        file.write(f"c:{c.rect.x},{c.rect.y},{c.rect.width},{c.rect.height}\n")
+    for o in objects_list:
+        if o.__class__ == CollisionObject:
+            file.write(f"c:{o.rect.x},{o.rect.y},{o.rect.width},{o.rect.height}\n")
+        elif o.__class__ == DamagingObject:
+            file.write(f"d:{o.rect.x},{o.rect.y},{o.rect.width},{o.rect.height}\n")
     file.close()
 
 def draw_gui():

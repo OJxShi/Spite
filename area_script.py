@@ -28,7 +28,7 @@ def load_area(area):
         item_list.append(AreaChanger(500,500,100,150,50,0))
 
 def load_area_from_file(file_name):
-    global collision_list,item_list
+    global collision_list,item_list,objects_list
     try:
         file = open(f"custom levels/{file_name}.txt")
     except FileNotFoundError:
@@ -39,6 +39,9 @@ def load_area_from_file(file_name):
         if id == "c":
             c = [int(coord) for coord in data.split(",")]
             collision_list.append(CollisionObject(c[0],c[1],c[2],c[3]))
+        elif id == "d":
+            c = [int(coord) for coord in data.split(",")]
+            objects_list.append(DamagingObject(c[0],c[1],c[2],c[3]))
     
     file.close()
 
@@ -48,9 +51,12 @@ def draw_area():
         pygame.draw.line(screen,(75,75,75),(x-camera.x%grid,0),(x-camera.x%grid,HEIGHT),1)
     for y in range(-grid,HEIGHT+grid,grid):
         pygame.draw.line(screen,(75,75,75),(0,y-camera.y%grid),(WIDTH,y-camera.y%grid),1)
+    for object in objects_list:
+        object.draw()
+    
     draw_colliders()
     draw_items()
-    draw_particles()
+    # draw_particles()
 
 def update_area():
     update_particles()
