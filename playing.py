@@ -55,6 +55,7 @@ class Playing(GameState):
         draw_area()
         draw_items()
         player.draw()
+        draw_particles()
         
 #         pygame.draw.circle(screen,(0,0,0),(640,360),7)
 #         pygame.draw.circle(screen,(255,255,255),(640,360),5)
@@ -67,8 +68,8 @@ class Pause(GameState):
     
     def event_handle(self,event):
         if event.type == pygame.MOUSEBUTTONDOWN:
-            global saving_game
-            saving_game = True
+#             global saving_game
+#             saving_game = True
             self.next_state = "Playing"
             return True
         if event.type == KEYDOWN:
@@ -115,4 +116,4 @@ except FileNotFoundError:
 
 saving_game = False
 
-load_area(current_area)
+load_area(0)#current_area)
