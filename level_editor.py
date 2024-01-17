@@ -1,7 +1,8 @@
-import pygame,collision_script,random,game_state#,area_script
+import pygame,collision_script,random,game_state,interface
 from pygame import *
 from collision_script import *
 from game_state import GameState
+from interface import *
 
 pygame.init()
 pygame.font.init()
@@ -14,7 +15,6 @@ clock = pygame.time.Clock()
 DOUBLE_CLICK_COOLDOWN = 15
 grid = 50
 mouse_pos_font = pygame.font.SysFont("monospace",20)
-button_hover_font = pygame.font.SysFont("Arial",20)
 file_name_font = pygame.font.SysFont("Arial",30)
 current_file_name = "Untitled Level"
 mouse_down = False
@@ -38,14 +38,9 @@ custom_mouse = cm
 class Default(GameState):
     def __init__(self):
         super().__init__()
-        self.buttons = [
-            SAVE_BUTTON
-        ]
         pygame.mouse.set_visible(False)
     def event_handle(self,event):
         if event.type == MOUSEBUTTONDOWN:
-            if SAVE_BUTTON.is_clicked():
-                save_level()
                 
             if last_mouse_click <= DOUBLE_CLICK_COOLDOWN:
                 for i,c in enumerate(objects_list):
@@ -71,11 +66,6 @@ class Default(GameState):
     
     def draw(self):
         mouse_img = cm
-        for button in self.buttons: 
-            button.draw()
-            if button.hover():
-                mouse_img = cm_point
-                button.draw_text()
         mouse_pos_text = mouse_pos_font.render(f"{mouse_world_pos}",True,(0,0,0))
         if mouse_screen_pos[1] >= 72:
             screen.blit(mouse_pos_text,(mouse_screen_pos[0],mouse_screen_pos[1]-20))
@@ -87,14 +77,10 @@ class Drag(GameState):
     def __init__(self,temp=False):
         super().__init__()
         self.queued_state = temp
-        self.buttons = [
-            SAVE_BUTTON
-        ]
         
     def event_handle(self,event):
         if event.type == MOUSEBUTTONDOWN:
-            if SAVE_BUTTON.is_clicked():
-                save_level()
+            pass
                 
     def update(self):
         if mouse_down and mouse_screen_pos[1] >= 72:
@@ -108,11 +94,6 @@ class Drag(GameState):
         mouse_img = cm
         mouse_offset = (0,0)
         mouse_pos_text = mouse_pos_font.render(f"{mouse_world_pos}",True,(255,255,255),(0,0,0))
-        for button in self.buttons: 
-            button.draw()
-            if button.hover():
-                mouse_img = cm_point
-                button.draw_text()
         
         if mouse_screen_pos[1] >= 72:
             screen.blit(mouse_pos_text,(mouse_screen_pos[0],mouse_screen_pos[1]-20))
@@ -126,11 +107,6 @@ class Drag(GameState):
     def draw(self):
         mouse_img = cm
         offset = (0,0)
-        for button in self.buttons: 
-            button.draw()
-            if button.hover():
-                mouse_img = cm_point
-                button.draw_text()
         mouse_pos_text = mouse_pos_font.render(f"{mouse_world_pos}",True,(255,255,255),(0,0,0))
         if mouse_screen_pos[1] >= 72:
             screen.blit(mouse_pos_text,(mouse_screen_pos[0],mouse_screen_pos[1]-20))
@@ -164,29 +140,7 @@ def switch_states():
         elif current_state.next_state == "New Rect":
             current_state = NewRect()
         
-        current_state.enter()
-
-
-class Button:
-    def __init__(self,x,y,w,h,image=bowling,text=None):
-        self.rect = pygame.Rect(x,y,w,h)
-        self.image = pygame.transform.scale(image,(w,h))
-        self.text = button_hover_font.render(text,True,(0,0,0),(255,255,255))
-    
-    def is_clicked(self):
-        return self.hover()
-    
-    def hover(self):
-        if self.rect.collidepoint(mouse_screen_pos):
-            return True
-    
-    def draw(self):
-        screen.blit(self.image,(self.rect.x,self.rect.y))
-    
-    def draw_text(self):
-        screen.blit(self.text,(mouse_screen_pos[0]+20,mouse_screen_pos[1]-20)) 
-   
-SAVE_BUTTON = Button(200,10,30,30,text="Save Level")     
+        current_state.enter()    
 
 current_state = Default()
 
