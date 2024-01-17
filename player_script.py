@@ -150,9 +150,9 @@ class Player(AnimatedSprite):
         for object in objects_list:
             if object.__class__ == DamagingObject and self.hitbox.colliderect(object.rect):
                 if self.direction == "left":
-                    self.hurt(random.randint(1,5),"ur",kb=(10,40))
+                    self.hurt(random.randint(1,5),"ur",kb=(5,40))
                 elif self.direction == "right":
-                    self.hurt(random.randint(1,5),"ul",kb=(10,40))
+                    self.hurt(random.randint(1,5),"ul",kb=(5,40))
         
         self.align()
         
